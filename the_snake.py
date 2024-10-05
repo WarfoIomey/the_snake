@@ -64,7 +64,11 @@ class GameObject():
     position: tuple = CENTER
     body_color: tuple = BOARD_BACKGROUND_COLOR
 
-    def __init__(self, position, body_color) -> None:
+    def __init__(
+            self,
+            position=CENTER,
+            body_color=BOARD_BACKGROUND_COLOR,
+    ) -> None:
         self.position = position
         self.body_color = body_color
 
@@ -75,20 +79,20 @@ class GameObject():
         pass
 
 
-class Food(GameObject):
+class Apple(GameObject):
     """Дочерний класс GameObject, предназначен для создания еды для змеи.
 
     Атрибуты:
         body_color (tuple): Цвет еды.
         position (tuple): Расположение еды в случайном месте.
     """
-
+    body_color = APPLE_COLOR
     position = (
         randrange(0, SCREEN_WIDTH, 20),
         randrange(0, SCREEN_HEIGHT, 20),
     )
 
-    def __init__(self, body_color) -> None:
+    def __init__(self, body_color=APPLE_COLOR) -> None:
         self.body_color = body_color
         self.position = self.randomize_position
 
@@ -115,8 +119,8 @@ class Food(GameObject):
         )
 
 
-class Stone(Food):
-    """Дочерний класс Food, предназначен для создания препятствия для змеи.
+class Stone(Apple):
+    """Дочерний класс Apple, предназначен для создания препятствия для змеи.
 
     Атрибуты:
         body_color (tuple): Цвет камня.
@@ -127,7 +131,7 @@ class Stone(Food):
     count: int = 3
     list_stones: list = []
 
-    def __init__(self, count):
+    def __init__(self, count=3):
         self.count = count
         self.randomize_position_stone()
 
@@ -172,7 +176,7 @@ class Snake(GameObject):
     next_direction: Optional[tuple] = None
     body_color = SNAKE_COLOR
 
-    def __init__(self, position, body_color) -> None:
+    def __init__(self, position=CENTER, body_color=SNAKE_COLOR) -> None:
         super().__init__(position, body_color)
 
     def update_direction(self) -> None:
@@ -305,9 +309,9 @@ def handle_keys(game_object) -> None:
 def main():
     """Функция игры"""
     pygame.init()
-    snake = Snake(position=CENTER, body_color=SNAKE_COLOR)
-    apple = Food(body_color=APPLE_COLOR)
-    bad_food = Food(body_color=BAD_FOOD_COLOR)
+    snake = Snake()
+    apple = Apple()
+    bad_food = Apple(body_color=BAD_FOOD_COLOR)
     stone = Stone(count=3)
     stone.draw()
     snake.draw()
