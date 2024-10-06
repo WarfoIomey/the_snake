@@ -39,9 +39,6 @@ STONE_COLOR = (169, 169, 169)
 # Скорость движения змейки:
 SPEED = 20
 
-# Количество камней.
-COUNT_STONE = 3
-
 # Настройка игрового окна:
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), 0, 32)
 
@@ -86,6 +83,7 @@ class Apple(GameObject):
         body_color (tuple): Цвет еды.
         position (tuple): Расположение еды в случайном месте.
     """
+
     body_color = APPLE_COLOR
     position = (
         randrange(0, SCREEN_WIDTH, 20),
