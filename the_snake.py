@@ -328,9 +328,9 @@ def main():
             snake.length -= 1
             if snake.length == 0:
                 snake.reset()
-                bad_food.position = apple.randomize_position
+                bad_food.position = bad_food.randomize_position
             else:
-                bad_food.position = apple.randomize_position
+                bad_food.position = bad_food.randomize_position
                 last_rect = pygame.Rect(
                     snake.positions[-1],
                     (GRID_SIZE, GRID_SIZE),
