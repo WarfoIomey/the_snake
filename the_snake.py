@@ -479,7 +479,7 @@ def show_menu(params, font):
 
                     back_button = pygame.Rect(
                         CENTER_X + 100,
-                        425,
+                        CENTER_Y + 185,
                         LONG_RECT,
                         HEIGHT_RECT,
                     )
