@@ -9,6 +9,15 @@ GRID_SIZE = 20
 GRID_WIDTH = SCREEN_WIDTH // GRID_SIZE
 GRID_HEIGHT = SCREEN_HEIGHT // GRID_SIZE
 
+# Центр по оси х.
+CENTER_X = SCREEN_WIDTH // 2
+# Центр по оси y.
+CENTER_Y = SCREEN_HEIGHT // 2
+
+# Константы размеров объектов главного меню.
+LONG_RECT = 200
+HEIGHT_RECT = 50
+
 # Направления движения:
 UP = (0, -1)
 DOWN = (0, 1)
@@ -16,7 +25,7 @@ LEFT = (-1, 0)
 RIGHT = (1, 0)
 
 # Центр поля.
-CENTER = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
+CENTER = (CENTER_X, CENTER_Y)
 
 # Цвет фона - черный:
 BOARD_BACKGROUND_COLOR = (0, 0, 0)
@@ -36,6 +45,9 @@ BAD_FOOD_COLOR = (255, 0, 255)
 # Цвет камня.
 STONE_COLOR = (169, 169, 169)
 
+# Число камней.
+STONE_COUNT = 3
+
 # Скорость движения змейки:
 SPEED = 20
 
@@ -50,16 +62,38 @@ clock = pygame.time.Clock()
 
 
 # Тут опишите все классы игры.
+class InputBox():
+    """Класс для ввода параметров для изменения скорости змеи,
+    цвета змеи, цвета яблок и количество камней.
+
+    Атрибуты:
+        color (str): Код цвета активного поля и неактивного.
+        text_user (str): Текст который пользователь ввёл.
+        is_active (bool): Статус окна ввода.
+    """
+
+    def __init__(
+        self,
+        color: str = '#90ee90',
+        text_user=f'{BOARD_BACKGROUND_COLOR}',
+        is_active=False
+    ) -> None:
+        self.color = color
+        self.is_active = is_active
+        self.text_user = text_user
+
+    def update_color(self) -> None:
+        """Метод для измения цвета окна ввода"""
+        self.color = '#a6caf0' if self.is_active else '#90ee90'
+
+
 class GameObject():
     """Родительский класс для создания яблок и змей.
 
     Атрибуты:
         position (tuple): Позиция объекта на игровом поле.
-        body_color: (tuple): Цвет объекта.
+        body_color (tuple): Цвет объекта.
     """
-
-    position: tuple = CENTER
-    body_color: tuple = BOARD_BACKGROUND_COLOR
 
     def __init__(
             self,
@@ -73,7 +107,6 @@ class GameObject():
         """Метод для отрисовки объектов, предназначен
         для переопределения в дочерних классах.
         """
-        pass
 
 
 class Apple(GameObject):
@@ -82,16 +115,18 @@ class Apple(GameObject):
     Атрибуты:
         body_color (tuple): Цвет еды.
         position (tuple): Расположение еды в случайном месте.
+        list_apple (list): Список расположений яблок на игровом поле.
+        occupied_cells (list): Список всех занятых ячеек на игровом поле.
     """
 
-    body_color = APPLE_COLOR
-    position = (
-        randrange(0, SCREEN_WIDTH, 20),
-        randrange(0, SCREEN_HEIGHT, 20),
-    )
-
-    def __init__(self, body_color=APPLE_COLOR) -> None:
+    def __init__(
+            self,
+            body_color=APPLE_COLOR,
+            occupied_cells: list = [],
+    ) -> None:
         self.body_color = body_color
+        self.list_apple: list = []
+        self.occupied_cells = occupied_cells
         self.position = self.randomize_position
 
     def draw(self) -> None:
@@ -111,10 +146,21 @@ class Apple(GameObject):
         Возвращает:
             tuple: Расположение по x и y на игровом поле.
         """
-        return (
-            randrange(0, SCREEN_WIDTH, 20),
-            randrange(0, SCREEN_HEIGHT, 20),
+        self.list_apple.clear()
+        result = (
+            randrange(0, SCREEN_WIDTH, GRID_SIZE),
+            randrange(0, SCREEN_HEIGHT, GRID_SIZE),
         )
+        for occupied in self.occupied_cells:
+            if result == occupied:
+                new_result = (
+                    randrange(0, SCREEN_WIDTH, GRID_SIZE),
+                    randrange(0, SCREEN_HEIGHT, GRID_SIZE)
+                )
+                self.list_apple.append(new_result)
+            else:
+                self.list_apple.append(result)
+        return result
 
 
 class Stone(Apple):
@@ -123,14 +169,20 @@ class Stone(Apple):
     Атрибуты:
         body_color (tuple): Цвет камня.
         list_stone (list): Список камней с их расположением.
+        count (int): Количество камней на игровом поле.
+        occupied_cells (list): Список всех занятых ячеек на игровом поле.
+        list_stones (list): Список координат всех ячеек где находится камень.
     """
 
-    body_color: tuple = STONE_COLOR
-    count: int = 3
-    list_stones: list = []
-
-    def __init__(self, count=3):
+    def __init__(
+            self,
+            body_color=STONE_COLOR,
+            occupied_cells: list = [],
+            count=3):
         self.count = count
+        self.body_color = body_color
+        self.occupied_cells = occupied_cells
+        self.list_stones: list = []
         self.randomize_position_stone()
 
     def draw(self) -> None:
@@ -146,13 +198,21 @@ class Stone(Apple):
 
     def randomize_position_stone(self) -> None:
         """Метод для генерации случайного расположения камня."""
+        self.list_stones.clear()
         for _ in range(1, self.count + 1):
-            self.list_stones.append(
-                (
-                    randrange(0, SCREEN_WIDTH, 20),
-                    randrange(0, SCREEN_HEIGHT, 20),
-                )
+            result = (
+                randrange(0, SCREEN_WIDTH, GRID_SIZE),
+                randrange(0, SCREEN_HEIGHT, GRID_SIZE),
             )
+            for occupied in self.occupied_cells:
+                if occupied == result:
+                    new_result = (
+                        randrange(0, SCREEN_WIDTH, GRID_SIZE),
+                        randrange(0, SCREEN_HEIGHT, GRID_SIZE),
+                    )
+                    self.list_stones.append(new_result)
+                else:
+                    self.list_stones.append(result)
 
 
 class Snake(GameObject):
@@ -167,15 +227,21 @@ class Snake(GameObject):
         body_color (tuple): Цвет змеи.
     """
 
-    length: int = 1
-    positions = [CENTER]
-    last: tuple = CENTER
-    direction: tuple = RIGHT
-    next_direction: Optional[tuple] = None
-    body_color = SNAKE_COLOR
-
-    def __init__(self, position=CENTER, body_color=SNAKE_COLOR) -> None:
+    def __init__(
+            self,
+            position=CENTER,
+            positions=[CENTER],
+            body_color=SNAKE_COLOR,
+            length: int = 1,
+            last: tuple = CENTER,
+            direction: tuple = RIGHT,
+            next_direction: Optional[tuple] = None) -> None:
         super().__init__(position, body_color)
+        self.positions = positions
+        self.length = length
+        self.last = last
+        self.direction = direction
+        self.next_direction = next_direction
 
     def update_direction(self) -> None:
         """Обновление движения змеи."""
@@ -187,64 +253,32 @@ class Snake(GameObject):
         """Метод передвижения змеи по сетке игрового поле,
         с переходом из одной границы поля в другю.
         """
-        coordinate_x = self.positions[0][0]
-        coordinate_y = self.positions[0][1]
-        if coordinate_x + self.direction[0] * GRID_SIZE > SCREEN_WIDTH - 1:
-            self.positions.insert(
-                0,
-                (
-                    0,
-                    coordinate_y + self.direction[1] * GRID_SIZE,
-                )
+        coordinate_x, coordinate_y = self.get_head_position
+        if coordinate_x > SCREEN_WIDTH - 1:
+            coordinate_x = 0
+        elif coordinate_x < 0:
+            coordinate_x = SCREEN_WIDTH
+        if coordinate_y > SCREEN_HEIGHT - 1:
+            coordinate_y = 0
+        elif coordinate_y < 0:
+            coordinate_y = SCREEN_HEIGHT
+        self.positions.insert(
+            0,
+            (
+                coordinate_x + self.direction[0] * GRID_SIZE,
+                coordinate_y + self.direction[1] * GRID_SIZE,
             )
-        elif coordinate_y + self.direction[1] * GRID_SIZE > SCREEN_HEIGHT - 1:
-            self.positions.insert(
-                0,
-                (
-                    coordinate_x + self.direction[0] * GRID_SIZE,
-                    0,
-                )
-            )
-        elif coordinate_x + self.direction[0] * GRID_SIZE < 0:
-            self.positions.insert(
-                0,
-                (
-                    640,
-                    coordinate_y + self.direction[1] * GRID_SIZE,
-                )
-            )
-        elif coordinate_y + self.direction[1] * GRID_SIZE < 0:
-            self.positions.insert(
-                0,
-                (
-                    coordinate_x + self.direction[0] * GRID_SIZE,
-                    480,
-                )
-            )
-        else:
-            self.positions.insert(
-                0,
-                (
-                    coordinate_x + self.direction[0] * GRID_SIZE,
-                    coordinate_y + self.direction[1] * GRID_SIZE,
-                )
-            )
+        )
         self.last = self.positions[-1]
         self.positions.pop()
 
     def draw(self) -> None:
         """Отрисовка змеи."""
-        for position in self.positions[:-1]:
-            rect = (pygame.Rect(position, (GRID_SIZE, GRID_SIZE)))
-            pygame.draw.rect(screen, self.body_color, rect)
-            pygame.draw.rect(screen, BORDER_COLOR, rect, 1)
-
-    # Отрисовка головы змейки
-        head_rect = pygame.Rect(self.positions[0], (GRID_SIZE, GRID_SIZE))
+        head_rect = pygame.Rect(self.get_head_position, (GRID_SIZE, GRID_SIZE))
         pygame.draw.rect(screen, self.body_color, head_rect)
         pygame.draw.rect(screen, BORDER_COLOR, head_rect, 1)
 
-    # Затирание последнего сегмента
+        # Затирание последнего сегмента
         if self.last:
             last_rect = pygame.Rect(self.last, (GRID_SIZE, GRID_SIZE))
             pygame.draw.rect(screen, BOARD_BACKGROUND_COLOR, last_rect)
@@ -287,7 +321,101 @@ class Snake(GameObject):
         self.length = 1
 
 
-def handle_keys(game_object) -> None:
+def draw_text(surface, text, font, color, x, y):
+    """Отрисовка текста в главном меню"""
+    text_surface = font.render(text, True, color)
+    surface.blit(text_surface, (x, y))
+
+
+def draw_button(surface, text, font, color, rect, border_color):
+    """Отрисовка кнопок в главном меню"""
+    pygame.draw.rect(surface, border_color, rect, 2)
+    text_surface = font.render(text, True, color)
+    text_rect = text_surface.get_rect(center=rect.center)
+    surface.blit(text_surface, text_rect)
+
+
+def draw_input_box(surface, text, font, color, rect, text_color):
+    """Отрисовка полей ввода значений в главном меню"""
+    pygame.draw.rect(surface, color, rect)
+    text_surface = font.render(text, True, text_color)
+    surface.blit(text_surface, (rect.x + 5, rect.y + 5))
+    rect.w = max(100, text_surface.get_width() + 10)
+
+
+def choice_box(rect, box, x, y):
+    """Выбор окна ввода параметров"""
+    if rect.collidepoint(x, y):
+        box.is_active = not box.is_active
+        box.update_color()
+
+
+def proccesing_box(box, event):
+    """Функция для удаления последнего элемента или ввода элемента"""
+    if event.key == pygame.K_BACKSPACE:
+        if box.is_active:
+            box.text_user = box.text_user[:-1]
+    elif box.is_active:
+        box.text_user += event.unicode
+
+
+def parse_str(box):
+    """Функция обработки строки"""
+    item = box.text_user[1:-1].replace(' ', '')
+    result = {
+        'R': int(item.split(',')[0]),
+        'G': int(item.split(',')[1]),
+        'B': int(item.split(',')[2]),
+    }
+    return result
+
+
+def hangle_mouse(
+        back_button,
+        save_button,
+        snake_box,
+        speed_box,
+        apple_box,
+        stone_box,
+        color_snake_rect,
+        speed_snake_rect,
+        color_apple_rect,
+        stone_rect,
+        params
+):
+    """Функция для обработки мышки, клавиатуры
+    и кнопок для сохранения параметров игры.
+    """
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            raise SystemExit
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            mouse_x, mouse_y = event.pos
+            if back_button.collidepoint(mouse_x, mouse_y):
+                # Возвращение в главное меню.
+                return False
+            if save_button.collidepoint(mouse_x, mouse_y):
+                # Кнопка применения настроек.
+                snake = parse_str(snake_box)
+                apple = parse_str(apple_box)
+                params['count_stone'] = int(stone_box.text_user)
+                params['speed'] = int(speed_box.text_user)
+                params['color_apple'] = (apple['R'], apple['G'], apple['B'])
+                params['color_snake'] = (snake['R'], snake['G'], snake['B'])
+            choice_box(color_snake_rect, snake_box, mouse_x, mouse_y)
+            choice_box(speed_snake_rect, speed_box, mouse_x, mouse_y)
+            choice_box(color_apple_rect, apple_box, mouse_x, mouse_y)
+            choice_box(stone_rect, stone_box, mouse_x, mouse_y)
+        elif event.type == pygame.KEYDOWN:
+            proccesing_box(snake_box, event)
+            proccesing_box(speed_box, event)
+            proccesing_box(apple_box, event)
+            proccesing_box(stone_box, event)
+    return True
+
+
+def handle_keys(game_object):
     """Функция для обработки нажатия клавиатуры"""
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -302,52 +430,286 @@ def handle_keys(game_object) -> None:
                 game_object.next_direction = LEFT
             elif event.key == pygame.K_RIGHT and game_object.direction != LEFT:
                 game_object.next_direction = RIGHT
+            elif event.key == pygame.K_ESCAPE:
+                return False
+    return True
+
+
+def show_menu(params, font):
+    """Функция для отображения главного меню и меню настроек игры."""
+    menu = True
+    setting = False
+    start_button = pygame.Rect(
+        CENTER_X - 100,
+        CENTER_Y - 90,
+        LONG_RECT,
+        HEIGHT_RECT
+    )
+    settings_button = pygame.Rect(
+        CENTER_X - 100,
+        CENTER_Y + 10,
+        LONG_RECT,
+        HEIGHT_RECT
+    )
+    quit_button = pygame.Rect(
+        CENTER_X - 100,
+        CENTER_Y + 110,
+        LONG_RECT,
+        HEIGHT_RECT
+    )
+    while menu:
+        clock.tick(params['speed'])
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                raise SystemExit
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                mouse_x, mouse_y = event.pos
+                if start_button.collidepoint(mouse_x, mouse_y):
+                    menu = False
+                elif settings_button.collidepoint(mouse_x, mouse_y):
+                    setting = True
+                    save_button = pygame.Rect(
+                        CENTER_X - 100,
+                        CENTER_Y + 185,
+                        LONG_RECT,
+                        HEIGHT_RECT,
+                    )
+
+                    back_button = pygame.Rect(
+                        CENTER_X + 100,
+                        425,
+                        LONG_RECT,
+                        HEIGHT_RECT,
+                    )
+                    color_snake_rect = pygame.Rect(
+                        CENTER_X - 100,
+                        CENTER_Y - 190,
+                        LONG_RECT,
+                        HEIGHT_RECT,
+                    )
+                    color_apple_rect = pygame.Rect(
+                        CENTER_X,
+                        CENTER_Y - 90,
+                        LONG_RECT,
+                        HEIGHT_RECT,
+                    )
+                    speed_snake_rect = pygame.Rect(
+                        CENTER_X,
+                        CENTER_Y + 10,
+                        LONG_RECT,
+                        HEIGHT_RECT,
+                    )
+                    stone_rect = pygame.Rect(
+                        CENTER_X + 100,
+                        CENTER_Y + 110,
+                        LONG_RECT,
+                        HEIGHT_RECT,
+                    )
+                    snake_box = InputBox(text_user=f'{params["color_snake"]}')
+                    speed_box = InputBox(text_user=f'{params["speed"]}')
+                    apple_box = InputBox(text_user=f'{params["color_apple"]}')
+                    stone_box = InputBox(text_user=f'{params["count_stone"]}')
+                    while setting:
+                        setting = hangle_mouse(
+                            back_button=back_button,
+                            save_button=save_button,
+                            snake_box=snake_box,
+                            speed_box=speed_box,
+                            apple_box=apple_box,
+                            stone_box=stone_box,
+                            color_snake_rect=color_snake_rect,
+                            speed_snake_rect=speed_snake_rect,
+                            color_apple_rect=color_apple_rect,
+                            stone_rect=stone_rect,
+                            params=params
+                        )
+                        screen.fill(BOARD_BACKGROUND_COLOR)
+                        draw_text(
+                            screen,
+                            'Цвет змеи:',
+                            font,
+                            SNAKE_COLOR,
+                            CENTER_X - 300,
+                            CENTER_Y - 190,
+                        )
+                        draw_input_box(
+                            screen,
+                            snake_box.text_user,
+                            font,
+                            snake_box.color,
+                            color_snake_rect,
+                            BOARD_BACKGROUND_COLOR,
+                        )
+                        draw_text(
+                            screen,
+                            'Цвет яблок:',
+                            font,
+                            SNAKE_COLOR,
+                            CENTER_X - 300,
+                            CENTER_Y - 90,
+                        )
+                        draw_input_box(
+                            screen,
+                            apple_box.text_user,
+                            font,
+                            apple_box.color,
+                            color_apple_rect,
+                            BOARD_BACKGROUND_COLOR,
+                        )
+                        draw_text(
+                            screen,
+                            'Скорость змеи:',
+                            font,
+                            SNAKE_COLOR,
+                            CENTER_X - 300,
+                            CENTER_Y + 10,
+                        )
+                        draw_input_box(
+                            screen,
+                            speed_box.text_user,
+                            font,
+                            speed_box.color,
+                            speed_snake_rect,
+                            BOARD_BACKGROUND_COLOR
+                        )
+                        draw_text(
+                            screen,
+                            'Количество камней:',
+                            font,
+                            SNAKE_COLOR,
+                            CENTER_X - 300,
+                            CENTER_Y + 110,
+                        )
+                        draw_input_box(
+                            screen,
+                            stone_box.text_user,
+                            font,
+                            stone_box.color,
+                            stone_rect,
+                            BOARD_BACKGROUND_COLOR
+                        )
+                        draw_button(
+                            screen,
+                            'Сохранить',
+                            font,
+                            SNAKE_COLOR,
+                            save_button,
+                            BOARD_BACKGROUND_COLOR,
+                        )
+                        draw_button(
+                            screen,
+                            'Назад',
+                            font,
+                            SNAKE_COLOR,
+                            back_button,
+                            BOARD_BACKGROUND_COLOR,
+                        )
+                        pygame.display.update()
+
+                elif quit_button.collidepoint(mouse_x, mouse_y):
+                    pygame.quit()
+                    raise SystemExit
+        screen.fill(BOARD_BACKGROUND_COLOR)
+        draw_text(
+            screen,
+            'Меню игры',
+            font,
+            SNAKE_COLOR,
+            CENTER_X - 100,
+            CENTER_Y - 190,
+        )
+        draw_button(
+            screen,
+            'Начать игру',
+            font,
+            SNAKE_COLOR,
+            start_button,
+            BOARD_BACKGROUND_COLOR,
+        )
+        draw_button(
+            screen,
+            'Настройки',
+            font,
+            SNAKE_COLOR,
+            settings_button,
+            BOARD_BACKGROUND_COLOR,
+        )
+        draw_button(
+            screen,
+            'Выйти',
+            font,
+            SNAKE_COLOR,
+            quit_button,
+            BOARD_BACKGROUND_COLOR
+        )
+        pygame.display.update()
 
 
 def main():
     """Функция игры"""
     pygame.init()
-    snake = Snake()
-    apple = Apple()
-    bad_food = Apple(body_color=BAD_FOOD_COLOR)
-    stone = Stone(count=3)
-    stone.draw()
-    snake.draw()
-    apple.draw()
-    bad_food.draw()
+    pygame.font.init()
+    FONT = pygame.font.Font(None, 50)
+    # Параметры игры по умолчанию.
+    params = {
+        'speed': SPEED,
+        'color_snake': SNAKE_COLOR,
+        'color_apple': APPLE_COLOR,
+        'count_stone': STONE_COUNT,
+    }
     while True:
-        clock.tick(SPEED)
-        handle_keys(snake)
-        snake.update_direction()
-        snake.move()
-        for position_stone in stone.list_stones:
-            if position_stone == snake.get_head_position:
-                snake.reset()
-                stone.draw()
-        if bad_food.position == snake.get_head_position:
-            snake.length -= 1
-            if snake.length == 0:
-                snake.reset()
-                bad_food.position = bad_food.randomize_position
-            else:
-                bad_food.position = bad_food.randomize_position
-                last_rect = pygame.Rect(
-                    snake.positions[-1],
-                    (GRID_SIZE, GRID_SIZE),
-                )
-                pygame.draw.rect(screen, BOARD_BACKGROUND_COLOR, last_rect)
-                snake.positions.pop()
-        if apple.position == snake.get_head_position:
-            snake.length += 1
-            apple.position = apple.randomize_position
-            snake.added_body_snake()
-        for position_body_snake in snake.positions[1:]:
-            if snake.positions[0] == position_body_snake:
-                snake.reset()
-        snake.draw()
-        apple.draw()
-        bad_food.draw()
-        pygame.display.update()
+        show_menu(params, FONT)
+        screen.fill(BOARD_BACKGROUND_COLOR)
+        snake = Snake(body_color=params['color_snake'])
+        stone = Stone(
+            count=params['count_stone'],
+            occupied_cells=snake.positions
+        )
+        apple = Apple(
+            body_color=params['color_apple'],
+            occupied_cells=snake.positions + stone.list_stones,
+        )
+        occupied_cells = snake.positions + stone.list_stones + apple.list_apple
+        bad_food = Apple(
+            body_color=BAD_FOOD_COLOR,
+            occupied_cells=occupied_cells,
+        )
+        game = True
+        while game:
+            clock.tick(params['speed'])
+            game = handle_keys(snake)
+            snake.update_direction()
+            snake.move()
+            for position_stone in stone.list_stones:
+                if position_stone == snake.get_head_position:
+                    snake.reset()
+                    stone.draw()
+            if bad_food.position == snake.get_head_position:
+                snake.length -= 1
+                if snake.length == 0:
+                    snake.reset()
+                    bad_food.position = bad_food.randomize_position
+                else:
+                    bad_food.position = bad_food.randomize_position
+                    last_rect = pygame.Rect(
+                        snake.positions[-1],
+                        (GRID_SIZE, GRID_SIZE),
+                    )
+                    pygame.draw.rect(screen, BOARD_BACKGROUND_COLOR, last_rect)
+                    snake.positions.pop()
+            if apple.position == snake.get_head_position:
+                snake.length += 1
+                apple.position = apple.randomize_position
+                snake.added_body_snake()
+            for position_body_snake in snake.positions[1:]:
+                if snake.get_head_position == position_body_snake:
+                    snake.reset()
+            snake.draw()
+            stone.draw()
+            apple.draw()
+            bad_food.draw()
+            pygame.display.update()
 
 
 if __name__ == '__main__':
