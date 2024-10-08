@@ -151,7 +151,6 @@ class Apple(GameObject):
             randrange(0, SCREEN_WIDTH, GRID_SIZE),
             randrange(0, SCREEN_HEIGHT, GRID_SIZE),
         )
-        print(self.occupied_cells)
         for occupied in self.occupied_cells:
             if result == occupied:
                 new_result = (
