@@ -141,7 +141,7 @@ class Apple(GameObject):
 
     @property
     def randomize_position(self) -> tuple:
-        """Декоратор для генерации случайного расположения еды.
+        """Метод для генерации случайного расположения еды.
 
         Возвращает:
             tuple: Расположение по x и y на игровом поле.
@@ -151,6 +151,7 @@ class Apple(GameObject):
             randrange(0, SCREEN_WIDTH, GRID_SIZE),
             randrange(0, SCREEN_HEIGHT, GRID_SIZE),
         )
+        print(self.occupied_cells)
         for occupied in self.occupied_cells:
             if result == occupied:
                 new_result = (
@@ -158,6 +159,7 @@ class Apple(GameObject):
                     randrange(0, SCREEN_HEIGHT, GRID_SIZE)
                 )
                 self.list_apple.append(new_result)
+                return new_result
             else:
                 self.list_apple.append(result)
         return result
@@ -700,8 +702,10 @@ def main():
                     snake.positions.pop()
             if apple.position == snake.get_head_position:
                 snake.length += 1
-                apple.position = apple.randomize_position
                 snake.added_body_snake()
+                occupied = snake.positions + stone.list_stones
+                apple.occupied_cells = occupied + bad_food.list_apple
+                apple.position = apple.randomize_position
             for position_body_snake in snake.positions[1:]:
                 if snake.get_head_position == position_body_snake:
                     snake.reset()
