@@ -97,7 +97,7 @@ STONE_COLOR = (169, 169, 169)
 LENGTH_HEAD_SNAKE = 1
 
 # Ширина линии змеи.
-WIDTH_LINE_SNAKE = 1
+WIDTH_LINE_ONE = 1
 
 # Ширина линии кнопок.
 WIDTH_LINE_BUTTON = 2
@@ -197,7 +197,7 @@ class Apple(GameObject):
         """
         rect = pygame.Rect(self.position, (GRID_SIZE, GRID_SIZE))
         pygame.draw.rect(screen, self.body_color, rect)
-        pygame.draw.rect(screen, BORDER_COLOR, rect, 1)
+        pygame.draw.rect(screen, BORDER_COLOR, rect, WIDTH_LINE_ONE)
 
     @property
     def randomize_position(self) -> tuple:
@@ -255,7 +255,7 @@ class Stone(Apple):
         for stone in self.list_stones:
             rect = pygame.Rect(stone, (GRID_SIZE, GRID_SIZE))
             pygame.draw.rect(screen, self.body_color, rect)
-            pygame.draw.rect(screen, BORDER_COLOR, rect, 1)
+            pygame.draw.rect(screen, BORDER_COLOR, rect, WIDTH_LINE_ONE)
 
     def randomize_position_stone(self) -> None:
         """Метод для генерации случайного расположения камня."""
@@ -331,7 +331,7 @@ class Snake(GameObject):
         """Отрисовка змеи."""
         head_rect = pygame.Rect(self.get_head_position, (GRID_SIZE, GRID_SIZE))
         pygame.draw.rect(screen, self.body_color, head_rect)
-        pygame.draw.rect(screen, BORDER_COLOR, head_rect, WIDTH_LINE_SNAKE)
+        pygame.draw.rect(screen, BORDER_COLOR, head_rect, WIDTH_LINE_ONE)
 
         # Затирание последнего сегмента
         if self.last:
@@ -746,7 +746,7 @@ def main():
                     stone.draw()
             if bad_food.position == snake.get_head_position:
                 snake.length -= LENGTH_HEAD_SNAKE
-                if snake.length == 0:
+                if snake.length < LENGTH_HEAD_SNAKE:
                     snake.reset()
                     bad_food.position = bad_food.randomize_position
                 else:
